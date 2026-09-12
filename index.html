@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brazil in 5 Regions 🇧🇷</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ============================================
+         HEADER
+         ============================================ -->
+    <header>
+        <h1>🇧🇷 Brazil in 5 Regions</h1>
+        <p>Explore Brazil's culture, history, cuisine and more — interactively!</p>
+    </header>
+
+
+    <!-- ============================================
+         CONTEÚDO PRINCIPAL
+         ============================================ -->
+    <main>
+
+        <!-- Mapa + Painel de detalhes -->
+        <div class="container">
+
+            <!-- Coluna do mapa -->
+            <section class="mapa-wrapper">
+                <h2>Click on a Region to Explore</h2>
+                <div id="mapa-brasil"></div>
+
+                <!-- Botões de acesso rápido -->
+                <div class="quick-access" id="quick-access"></div>
+            </section>
+
+            <!-- Coluna do painel de detalhes -->
+            <aside class="painel" id="painel-detalhes">
+                <div class="painel-vazio">
+                    <span class="emoji">👈</span>
+                    <p><strong>Click on a region</strong></p>
+                    <p>Choose a region on the map or use the quick access buttons to see its details.</p>
+                </div>
+            </aside>
+
+        </div>
+
+        <!-- Quiz -->
+        <section class="quiz-wrapper" id="quiz-container">
+            <!-- Preenchido via JS -->
+        </section>
+
+    </main>
+
+
+    <!-- ============================================
+         FOOTER
+         ============================================ -->
+    <footer>
+        <span class="bandeira">🇧🇷</span>
+        <p>Created with HTML, CSS & JavaScript | English Class Project</p>
+    </footer>
+
+    <!-- Tooltip flutuante do mapa -->
+    <div id="tooltip-mapa" class="tooltip-mapa"></div>
+
+    <!-- ============================================
+         SCRIPTS
+         ============================================ -->
+    <script src="js/data.js"></script>
+    <script src="js/mapa.js"></script>
+    <script src="js/quiz.js"></script>
+
+</body>
+</html>
