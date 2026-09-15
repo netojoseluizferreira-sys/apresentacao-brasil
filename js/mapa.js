@@ -128,6 +128,11 @@ function mostrarDetalhes(nomeRegiao) {
 
     if (!dados) return;
 
+    // Personalidades: mostra o conteúdo ou uma mensagem padrão
+    const personalidades = dados.personalidades && dados.personalidades.trim() !== ""
+        ? dados.personalidades
+        : "No personalities registered yet.";
+
     painel.innerHTML = `
         <h2>🌎 ${dados.nome}</h2>
 
@@ -177,6 +182,11 @@ function mostrarDetalhes(nomeRegiao) {
         </div>
 
         <div class="info-bloco">
+            <div class="titulo">👤 Personalities</div>
+            <div class="conteudo">${personalidades}</div>
+        </div>
+
+        <div class="info-bloco">
             <div class="titulo">🏛️ Capitals</div>
             <div class="capitais-lista">
                 ${dados.capitais.map(c => `
@@ -187,12 +197,7 @@ function mostrarDetalhes(nomeRegiao) {
             </div>
         </div>
 
-        <!-- Área do clima (inicia vazia) -->
         <div id="clima-container"></div>
-
-        <button class="btn-quiz-regiao" onclick="iniciarQuizRegiao('${nomeRegiao}')">
-            🎯 Start ${dados.nome} Quiz
-        </button>
     `;
 }
 

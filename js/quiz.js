@@ -1,189 +1,238 @@
 /* ============================================
-   QUIZ POR REGIÃO — com trava de resposta
+   QUIZ DO BRASIL — uma pergunta por vez
+   Resposta travada + correção só no final
    ============================================ */
 
-let regiaoAtualQuiz = null;
+let indiceAtual = 0;
+let respostasUsuario = [];
+let respostasTravadas = []; // controla quais perguntas já foram respondidas
+
 
 /**
- * Inicia o quiz de uma região específica.
- * @param {string} nomeRegiao - chave da região em REGIOES
+ * Inicia o quiz do Brasil.
  */
-function iniciarQuizRegiao(nomeRegiao) {
+function iniciarQuizBrasil() {
     const container = document.getElementById("quiz-container");
     if (!container) return;
 
-    regiaoAtualQuiz = nomeRegiao;
-    const perguntas = QUIZZES[nomeRegiao];
+    indiceAtual = 0;
+    respostasUsuario = new Array(PERGUNTAS_BRASIL.length).fill(null);
+    respostasTravadas = new Array(PERGUNTAS_BRASIL.length).fill(false);
 
-    if (!perguntas) return;
-
-    const dados = REGIOES[nomeRegiao];
-
-    container.innerHTML = `
-        <h2>🎯 Quiz: ${dados.nome}</h2>
-        <p>Test your knowledge about the ${dados.nome} region!</p>
-
-        <div id="quiz-perguntas"></div>
-
-        <div class="resultado-final" id="resultado-final">
-            <div class="pontuacao" id="pontuacao-valor">0/0</div>
-            <div class="mensagem" id="pontuacao-mensagem"></div>
-        </div>
-
-        <div style="text-align:center; margin-top:1.5rem;">
-            <button class="quiz-btn-resultado" id="btn-voltar">← Back to Map</button>
-        </div>
-    `;
-
-    const quizPerguntas = document.getElementById("quiz-perguntas");
-
-    perguntas.forEach((pergunta, index) => {
-        const bloco = document.createElement("div");
-        bloco.className = "pergunta";
-        bloco.dataset.index = index;
-
-        const opcoesHTML = pergunta.opcoes.map((opcao) => `
-            <label class="opcao" data-opcao="${opcao}">
-                <input type="radio" name="pergunta-${index}" value="${opcao}">
-                <span>${opcao}</span>
-            </label>
-        `).join("");
-
-        bloco.innerHTML = `
-            <h3>Question ${index + 1}: ${pergunta.pergunta}</h3>
-            <div class="opcoes">${opcoesHTML}</div>
-            <div class="feedback" id="feedback-${index}"></div>
-        `;
-
-        quizPerguntas.appendChild(bloco);
-
-        // Evento de clique em cada opção
-        bloco.querySelectorAll(".opcao input").forEach(input => {
-            input.addEventListener("change", () => verificarResposta(index));
-        });
-    });
-
-    // Botão de voltar
-    document.getElementById("btn-voltar").addEventListener("click", voltarAoMapa);
-
-    // Scroll suave até o quiz
+    renderizarPergunta();
     container.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 
 /**
- * Verifica a resposta de uma pergunta e TRAVA ela.
- * @param {number} index - índice da pergunta
+ * Renderiza a pergunta atual.
  */
-function verificarResposta(index) {
-    const pergunta = QUIZZES[regiaoAtualQuiz][index];
-    const bloco = document.querySelector(`.pergunta[data-index="${index}"]`);
-    const feedback = document.getElementById(`feedback-${index}`);
+function renderizarPergunta() {
+    const container = document.getElementById("quiz-container");
+    const pergunta = PERGUNTAS_BRASIL[indiceAtual];
+    const total = PERGUNTAS_BRASIL.length;
+    const progresso = (indiceAtual / total) * 100;
 
-    // Se já foi respondida, ignora
-    if (bloco.dataset.respondida === "true") return;
+    const respostaSalva = respostasUsuario[indiceAtual];
+    const travada = respostasTravadas[indiceAtual];
 
-    const selecionada = bloco.querySelector(`input[name="pergunta-${index}"]:checked`);
-    if (!selecionada) return;
+    const opcoesHTML = pergunta.opcoes.map((opcao) => {
+        let classe = "opcao";
+        if (respostaSalva === opcao) classe += " selecionada";
+        if (travada) classe += " travada";
 
-    const respostaUsuario = selecionada.value;
-    const correto = respostaUsuario === pergunta.resposta;
+        return `
+            <label class="${classe}" data-opcao="${opcao}">
+                <input type="radio" name="pergunta-atual" value="${opcao}"
+                    ${respostaSalva === opcao ? "checked" : ""}
+                    ${travada ? "disabled" : ""}>
+                <span>${opcao}</span>
+            </label>
+        `;
+    }).join("");
 
-    // Trava a pergunta
-    bloco.dataset.respondida = "true";
+    const botaoTexto = indiceAtual === total - 1 ? "Finish Quiz" : "Next →";
+    // Botão Back só aparece se a pergunta anterior não estiver travada
+    const podeVoltar = indiceAtual > 0 && !respostasTravadas[indiceAtual - 1];
+    const botaoAnterior = podeVoltar
+        ? `<button class="quiz-btn-nav quiz-btn-prev" id="btn-prev">← Back</button>`
+        : `<div></div>`;
 
-    // Desabilita todos os inputs dessa pergunta
-    bloco.querySelectorAll("input").forEach(input => {
-        input.disabled = true;
+    container.innerHTML = `
+        <h2>🎯 Brazil Quiz</h2>
+
+        <div class="quiz-progresso-wrapper">
+            <div class="quiz-progresso-barra" style="width: ${progresso}%"></div>
+        </div>
+        <div class="quiz-progresso-texto">
+            Question ${indiceAtual + 1} of ${total}
+        </div>
+
+        <div class="pergunta">
+            <h3>${pergunta.pergunta}</h3>
+            <div class="opcoes">${opcoesHTML}</div>
+            ${travada ? `<div class="feedback travado">🔒 Answer locked</div>` : ""}
+        </div>
+
+        <div class="quiz-nav">
+            ${botaoAnterior}
+            <button class="quiz-btn-nav quiz-btn-next" id="btn-next" disabled>
+                ${travada ? botaoTexto : "Confirm Answer"}
+            </button>
+        </div>
+    `;
+
+    const btnNext = document.getElementById("btn-next");
+
+    // Se já está travada, o botão Next fica direto habilitado
+    if (travada) {
+        btnNext.disabled = false;
+        btnNext.textContent = botaoTexto;
+    }
+
+    // Evento das opções
+    container.querySelectorAll(".opcao input").forEach(input => {
+        input.addEventListener("change", () => {
+            if (respostasTravadas[indiceAtual]) return;
+
+            respostasUsuario[indiceAtual] = input.value;
+
+            container.querySelectorAll(".opcao").forEach(opt => opt.classList.remove("selecionada"));
+            input.closest(".opcao").classList.add("selecionada");
+
+            // Muda o texto do botão pra "Confirm Answer"
+            btnNext.disabled = false;
+            btnNext.textContent = "Confirm Answer";
+        });
     });
 
-    // Remove classes antigas
-    bloco.querySelectorAll(".opcao").forEach(opt => {
-        opt.classList.remove("correta", "errada");
-    });
+    // Clique no botão Next / Confirm
+    btnNext.addEventListener("click", () => {
+        // Se ainda não travou, trava agora
+        if (!respostasTravadas[indiceAtual]) {
+            if (!respostasUsuario[indiceAtual]) return;
 
-    // Marca a opção escolhida
-    const opcaoEscolhida = bloco.querySelector(`.opcao[data-opcao="${respostaUsuario}"]`);
-    opcaoEscolhida.classList.add(correto ? "correta" : "errada");
+            // Trava
+            respostasTravadas[indiceAtual] = true;
 
-    // Se errou, marca também a correta
-    if (!correto) {
-        const opcaoCorreta = bloco.querySelector(`.opcao[data-opcao="${pergunta.resposta}"]`);
-        if (opcaoCorreta) opcaoCorreta.classList.add("correta");
-    }
+            // Desabilita inputs
+            container.querySelectorAll(".opcao input").forEach(i => i.disabled = true);
 
-    // Feedback em texto
-    if (correto) {
-        feedback.className = "feedback correto";
-        feedback.textContent = `✅ Correct! ${pergunta.explicacao}`;
-    } else {
-        feedback.className = "feedback incorreto";
-        feedback.textContent = `❌ Incorrect! The correct answer is: ${pergunta.resposta}. ${pergunta.explicacao}`;
-    }
+            // Marca visualmente
+            container.querySelectorAll(".opcao").forEach(opt => opt.classList.add("travada"));
 
-    // Se todas as perguntas foram respondidas, mostra o resultado
-    const totalRespondidas = document.querySelectorAll('.pergunta[data-respondida="true"]').length;
-    if (totalRespondidas === QUIZZES[regiaoAtualQuiz].length) {
-        setTimeout(mostrarResultado, 800);
-    }
-}
+            // Mostra feedback de travado
+            const perguntaBox = container.querySelector(".pergunta");
+            if (!perguntaBox.querySelector(".feedback")) {
+                const aviso = document.createElement("div");
+                aviso.className = "feedback travado";
+                aviso.textContent = "🔒 Answer locked";
+                perguntaBox.appendChild(aviso);
+            }
 
+            // Muda o botão pra Next/Finish
+            btnNext.textContent = (indiceAtual === PERGUNTAS_BRASIL.length - 1)
+                ? "Finish Quiz"
+                : "Next →";
 
-/**
- * Calcula a pontuação final e mostra o resultado.
- */
-function mostrarResultado() {
-    let pontuacao = 0;
-    const perguntas = QUIZZES[regiaoAtualQuiz];
+            return;
+        }
 
-    perguntas.forEach((pergunta, index) => {
-        const bloco = document.querySelector(`.pergunta[data-index="${index}"]`);
-        const marcada = bloco.querySelector(".opcao.correta");
-
-        // Verifica se a opção marcada como correta é a que o usuário escolheu
-        const inputMarcado = bloco.querySelector("input:checked");
-        if (inputMarcado && inputMarcado.value === pergunta.resposta) {
-            pontuacao++;
+        // Já está travada → avança
+        if (indiceAtual === PERGUNTAS_BRASIL.length - 1) {
+            mostrarResultadoFinal();
+        } else {
+            indiceAtual++;
+            renderizarPergunta();
         }
     });
 
-    const resultadoFinal = document.getElementById("resultado-final");
-    const valor = document.getElementById("pontuacao-valor");
-    const mensagem = document.getElementById("pontuacao-mensagem");
-
-    valor.textContent = `${pontuacao}/${perguntas.length}`;
-
-    if (pontuacao === perguntas.length) {
-        mensagem.textContent = "🏆 Perfect! You're a Brazil Expert!";
-    } else if (pontuacao >= perguntas.length - 1) {
-        mensagem.textContent = "🌟 Great job! You know Brazil very well!";
-    } else if (pontuacao >= Math.ceil(perguntas.length / 2)) {
-        mensagem.textContent = "👍 Not bad! Keep learning about Brazil!";
-    } else {
-        mensagem.textContent = "📚 Keep exploring! Brazil has so much to offer!";
+    // Botão Prev (só existe se a anterior não estiver travada)
+    const btnPrev = document.getElementById("btn-prev");
+    if (btnPrev) {
+        btnPrev.addEventListener("click", () => {
+            if (indiceAtual > 0 && !respostasTravadas[indiceAtual - 1]) {
+                indiceAtual--;
+                renderizarPergunta();
+            }
+        });
     }
-
-    resultadoFinal.classList.add("ativo");
-    resultadoFinal.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 
 /**
- * Volta para o mapa, limpando o quiz atual.
+ * Mostra o resultado final com todas as correções.
  */
-function voltarAoMapa() {
+function mostrarResultadoFinal() {
     const container = document.getElementById("quiz-container");
-    container.innerHTML = `
-        <h2>🎯 Brazil Regions Quiz</h2>
-        <p>Click on a region on the map to start its quiz!</p>
-    `;
-    regiaoAtualQuiz = null;
+    const total = PERGUNTAS_BRASIL.length;
 
-    // Scroll suave até o mapa
-    document.querySelector(".container").scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
+    let pontuacao = 0;
+
+    const revisaoHTML = PERGUNTAS_BRASIL.map((pergunta, index) => {
+        const respostaUsuario = respostasUsuario[index];
+        const correto = respostaUsuario === pergunta.resposta;
+
+        if (correto) pontuacao++;
+
+        const opcoesRevisao = pergunta.opcoes.map((opcao) => {
+            let classe = "opcao";
+
+            if (opcao === pergunta.resposta) {
+                classe += " correta";
+            } else if (opcao === respostaUsuario && !correto) {
+                classe += " errada";
+            }
+
+            return `
+                <div class="${classe}" data-opcao="${opcao}">
+                    <span>${opcao}</span>
+                </div>
+            `;
+        }).join("");
+
+        return `
+            <div class="pergunta-revisao">
+                <h3>
+                    <span class="rev-numero">${index + 1}</span>
+                    ${pergunta.pergunta}
+                    <span class="rev-status">${correto ? "✅" : "❌"}</span>
+                </h3>
+                <div class="opcoes">${opcoesRevisao}</div>
+                <div class="feedback ${correto ? "correto" : "incorreto"}">
+                    ${correto
+                        ? `✅ Correct! ${pergunta.explicacao}`
+                        : `❌ You chose <strong>${respostaUsuario || "—"}</strong>. Correct answer: <strong>${pergunta.resposta}</strong>. ${pergunta.explicacao}`
+                    }
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    let mensagemFinal;
+    if (pontuacao === total) {
+        mensagemFinal = "🏆 Perfect! You're a Brazil Expert!";
+    } else if (pontuacao >= total * 0.8) {
+        mensagemFinal = "🌟 Great job! You know Brazil very well!";
+    } else if (pontuacao >= total * 0.5) {
+        mensagemFinal = "👍 Not bad! Keep learning about Brazil!";
+    } else {
+        mensagemFinal = "📚 Keep exploring! Brazil has so much to offer!";
+    }
+
+    container.innerHTML = `
+        <div class="resultado-final ativo">
+            <div class="pontuacao">${pontuacao}/${total}</div>
+            <div class="mensagem">${mensagemFinal}</div>
+        </div>
+
+        <h3 class="revisao-titulo">📋 Review your answers</h3>
+        <div class="revisao-container">
+            ${revisaoHTML}
+        </div>
+    `;
+
+    container.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 
@@ -192,12 +241,15 @@ function voltarAoMapa() {
    ============================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Estado inicial do quiz
     const container = document.getElementById("quiz-container");
     if (container) {
         container.innerHTML = `
-            <h2>🎯 Brazil Regions Quiz</h2>
-            <p>Click on a region on the map to start its quiz!</p>
+            <h2>🎯 Brazil Quiz</h2>
+            <p>Click the button below to test your knowledge about Brazil!</p>
+            <button class="quiz-btn-iniciar" id="btn-iniciar-quiz">Start Quiz</button>
         `;
+
+        document.getElementById("btn-iniciar-quiz")
+            .addEventListener("click", iniciarQuizBrasil);
     }
 });
