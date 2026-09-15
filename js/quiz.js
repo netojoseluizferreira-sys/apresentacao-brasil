@@ -232,6 +232,9 @@ function mostrarResultadoFinal() {
         </div>
     `;
 
+    // Depois de montar o resultado
+    salvarResultado(nomeAluno, pontuacao);
+
     container.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -239,17 +242,43 @@ function mostrarResultadoFinal() {
 /* ============================================
    INICIALIZAÇÃO
    ============================================ */
-
 document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("quiz-container");
-    if (container) {
-        container.innerHTML = `
-            <h2>🎯 Brazil Quiz</h2>
-            <p>Click the button below to test your knowledge about Brazil!</p>
-            <button class="quiz-btn-iniciar" id="btn-iniciar-quiz">Start Quiz</button>
-        `;
+    if (!container) return;
 
-        document.getElementById("btn-iniciar-quiz")
-            .addEventListener("click", iniciarQuizBrasil);
-    }
+    container.innerHTML = `
+        <h2>🎯 Brazil Quiz</h2>
+        <p>Type your name to start the quiz!</p>
+
+        <div class="quiz-nome-wrapper">
+            <input type="text" id="input-nome" class="quiz-input-nome"
+                placeholder="Your name" maxlength="30" autocomplete="off">
+            <button class="quiz-btn-iniciar" id="btn-iniciar-quiz" disabled>
+                Start Quiz
+            </button>
+        </div>
+    `;
+
+    const inputNome = document.getElementById("input-nome");
+    const btnIniciar = document.getElementById("btn-iniciar-quiz");
+
+    // Habilita o botão só quando tiver pelo menos 2 caracteres
+    inputNome.addEventListener("input", () => {
+        btnIniciar.disabled = inputNome.value.trim().length < 2;
+    });
+
+    // Enter no input = inicia o quiz
+    inputNome.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !btnIniciar.disabled) {
+            btnIniciar.click();
+        }
+    });
+
+    btnIniciar.addEventListener("click", () => {
+        const nome = inputNome.value.trim();
+        if (nome.length < 2) return;
+
+        nomeAluno = nome;
+        iniciarQuizBrasil();
+    });
 });

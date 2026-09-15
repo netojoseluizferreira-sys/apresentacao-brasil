@@ -832,3 +832,29 @@ footer .bandeira {
 .pergunta-revisao .feedback {
     margin-top: 0.8rem;
 }
+
+/* Tela de nome antes do quiz */
+.quiz-nome-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.quiz-input-nome {
+    width: 100%;
+    max-width: 320px;
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    border: 2px solid var(--borda);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s ease;
+    text-align: center;
+    font-family: inherit;
+}
+
+.quiz-input-nome:focus {
+    border-color: var(--verde);
+}
